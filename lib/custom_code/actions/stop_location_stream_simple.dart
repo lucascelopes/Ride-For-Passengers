@@ -8,15 +8,17 @@ import 'package:flutter/material.dart';
 // Begin custom action code
 // DO NOT REMOVE OR MODIFY THE CODE ABOVE!
 
-import 'dart:async';
-
-class _LocStreamHolderSimple {
-  static StreamSubscription? sub;
-}
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
+    as bg;
+import 'loc_stream_holder.dart';
 
 Future<void> stopLocationStreamSimple(BuildContext context) async {
   try {
-    await _LocStreamHolderSimple.sub?.cancel();
-    _LocStreamHolderSimple.sub = null;
+    if (LocStreamHolderSimple.callback != null) {
+      bg.BackgroundGeolocation.removeListener(
+          LocStreamHolderSimple.callback!);
+      LocStreamHolderSimple.callback = null;
+    }
+    await bg.BackgroundGeolocation.stop();
   } catch (_) {}
 }

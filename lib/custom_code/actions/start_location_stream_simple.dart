@@ -10,12 +10,9 @@ import 'package:flutter/material.dart';
 
 import '/custom_code/actions/index.dart';
 
-import 'dart:async';
-import 'package:geolocator/geolocator.dart';
-
-class _LocStreamHolderSimple {
-  static StreamSubscription<Position>? sub;
-}
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart'
+    as bg;
+import 'loc_stream_holder.dart';
 
 /// Requisitos no FFAppState:
 /// double currentLat = 0;
@@ -23,56 +20,43 @@ class _LocStreamHolderSimple {
 /// DateTime? locationTimestamp;
 /// String locationStatus = 'idle';
 Future<void> startLocationStreamSimple(BuildContext context) async {
-  // 1) Serviços/permissão
-  final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  if (!serviceEnabled) {
-    FFAppState().locationStatus = 'denied';
-    // opcional: abrir ajustes
-    try {
-      await Geolocator.openLocationSettings();
-    } catch (_) {}
-    return;
+  // Configuração inicial do plugin
+  await bg.BackgroundGeolocation.ready(bg.Config(
+    desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+    distanceFilter: 5.0,
+    stopOnTerminate: false,
+    startOnBoot: true,
+  ));
+
+  // Remove callback anterior, se existir
+  if (LocStreamHolderSimple.callback != null) {
+    bg.BackgroundGeolocation.removeListener(
+        LocStreamHolderSimple.callback!);
   }
-  var perm = await Geolocator.checkPermission();
-  if (perm == LocationPermission.denied) {
-    perm = await Geolocator.requestPermission();
-  }
-  if (perm == LocationPermission.denied ||
-      perm == LocationPermission.deniedForever) {
-    FFAppState().locationStatus = 'denied';
-    return;
-  }
-  FFAppState().locationStatus = 'ok';
 
-  // 2) Cancela stream anterior
-  await _LocStreamHolderSimple.sub?.cancel();
-  _LocStreamHolderSimple.sub = null;
-
-  // 3) Settings universais (compatível com Web/iOS/Android)
-  const distanceFilterMeters = 5; // ajuste depois se quiser
-  const acc = LocationAccuracy.high;
-
-  final settings = LocationSettings(
-    accuracy: acc,
-    distanceFilter: distanceFilterMeters,
-  );
-
-  // 4) Assina o stream
-  _LocStreamHolderSimple.sub =
-      Geolocator.getPositionStream(locationSettings: settings).listen((pos) {
-    if (pos == null) return;
-    FFAppState().currentLat = pos.latitude;
-    FFAppState().currentLng = pos.longitude;
+  // Escuta atualizações de localização
+  LocStreamHolderSimple.callback = (bg.Location location) {
+    FFAppState().currentLat = location.coords.latitude;
+    FFAppState().currentLng = location.coords.longitude;
     FFAppState().locationTimestamp = DateTime.now();
-  }, onError: (_) {
+  };
+
+  bg.BackgroundGeolocation.onLocation(
+      LocStreamHolderSimple.callback!, (bg.LocationError error) {
     FFAppState().locationStatus = 'denied';
   });
 
-  // 5) Posição inicial rápida
+  FFAppState().locationStatus = 'ok';
+
+  // Inicia o monitoramento
+  await bg.BackgroundGeolocation.start();
+
+  // Posição inicial rápida
   try {
-    final last = await Geolocator.getCurrentPosition(desiredAccuracy: acc);
-    FFAppState().currentLat = last.latitude;
-    FFAppState().currentLng = last.longitude;
+    final loc = await bg.BackgroundGeolocation.getCurrentPosition(
+        persist: false);
+    FFAppState().currentLat = loc.coords.latitude;
+    FFAppState().currentLng = loc.coords.longitude;
     FFAppState().locationTimestamp = DateTime.now();
   } catch (_) {}
 }
