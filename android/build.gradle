@@ -1,14 +1,5 @@
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        // >>> Transistorsoft (necessário para background_fetch / flutter_background_geolocation)
-        maven { url "https://maven.transistorsoft.com" }
-        // (opcional) espelho, caso a URL acima esteja bloqueada no ambiente de build
-        maven { url "https://maven.transistorsoft.com/maven2" }
-    }
-}
 
+// Repositories are configured in settings.gradle via dependencyResolutionManagement
 rootProject.buildDir = '../build'
 
 subprojects {
