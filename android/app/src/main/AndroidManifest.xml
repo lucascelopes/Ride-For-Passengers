@@ -20,16 +20,16 @@
         tools:replace="android:maxSdkVersion" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
+    <!-- IMPORTANTES para MapView/WebView -->
     <application
         android:name="${applicationName}"
         android:label="Ride Bahamas"
         tools:replace="android:label"
         android:icon="@mipmap/ic_launcher"
-
-        <!-- IMPORTANTES para MapView/WebView -->
         android:hardwareAccelerated="true"
-        android:usesCleartextTraffic="true"   <!-- opcional: útil em debug -->
+        android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
+        <!-- opcional: útil em debug -->
 
         <activity
             android:name=".MainActivity"
